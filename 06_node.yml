@@ -4,5 +4,11 @@
     - docker
     - kube-nginx
     - kube-proxy
-    - kubelet-bootstrap-kubeconfig
+
+- hosts:
+    - localhost
+    roles:
+      - kubelet-bootstrap-kubeconfig
+
+- hosts:
     - kubelet
