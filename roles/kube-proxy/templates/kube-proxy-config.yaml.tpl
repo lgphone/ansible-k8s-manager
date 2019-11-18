@@ -8,7 +8,7 @@ bindAddress: {{ inventory_hostname }}
 healthzBindAddress: {{ inventory_hostname }}:10256
 metricsBindAddress: {{ inventory_hostname }}:10249
 enableProfiling: true
-clusterCIDR: ${CLUSTER_CIDR}
+clusterCIDR: {{ CLUSTER_CIDR }}
 hostnameOverride: {{ NODE_NAME }}
 mode: "ipvs"
 portRange: ""
