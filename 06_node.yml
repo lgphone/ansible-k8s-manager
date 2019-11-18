@@ -7,8 +7,8 @@
 
 - hosts:
     - localhost
-    roles:
-      - kubelet-bootstrap-kubeconfig
+  roles:
+    - kubelet-bootstrap-kubeconfig
 
 - hosts:
     - kubelet
