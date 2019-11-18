@@ -1,0 +1,29 @@
+- name: 分发Nginx 二进制压缩包
+  unarchive:
+    src: "nginx-1.16.1.tar.gz"
+    dest: "{{K8S_BASE_DIR}}/temp"
+    mode: 0755
+
+- name: 编译并安装kube api代理软件nginx
+  shell: "cd {{K8S_BASE_DIR}}/temp/nginx-1.16.1 && ./configure --with-stream \
+          --without-http --prefix={{KUBE_NGINX_INSTALL_DIR}} --without-http_uwsgi_module \
+          --without-http_scgi_module --without-http_fastcgi_module && make && make install"
+
+- name: 分发nginx配置文件
+  template:
+    src: nginx.conf.tpl
+    dest: "{{ KUBE_NGINX_INSTALL_DIR }}/conf/nginx.conf"
+    mode: 0644
+
+- name: 分发nginx systemd unit文件
+  template:
+    src: kube-nginx.service.tpl
+    dest: /etc/systemd/system/kube-nginx.service
+    mode: 0644
+
+- name: 启动kube-nginx服务
+  systemd:
+    name: kube-nginx
+    daemon_reload: yes
+    enabled: yes
+    state: started

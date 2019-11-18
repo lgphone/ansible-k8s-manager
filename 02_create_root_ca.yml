@@ -1,0 +1,3 @@
+- hosts: localhost
+  roles:
+    - root_ca

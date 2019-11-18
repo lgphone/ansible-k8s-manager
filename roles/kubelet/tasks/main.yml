@@ -1,0 +1,36 @@
+- name: 分发kubelet 二进制文件
+  unarchive:
+    src: kubelet.tar.gz
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+
+- name: 分发kubelet 配置
+  template:
+    src: kubelet-config.yaml.tpl
+    dest: "{{ K8S_BASE_DIR }}/conf/kubelet-config.yaml"
+    mode: 0644
+
+- name: 分发kubelet.kubeconfig 配置
+  copy:
+    src: "{{K8S_TEMP_DIR}}/kubelet-bootstrap-{{NODE_NAME}}.kubeconfig"
+    dest: "{{K8S_BASE_DIR}}/conf/kubelet-bootstrap.kubeconfig"
+    mode: 0755
+
+- name: 分发kubelet systemd unit 文件
+  template:
+    src: kubelet.service.tpl
+    dest: /etc/systemd/system/kubelet.service
+    mode: 0644
+
+- name: 创建kubelet 数据目录
+  file:
+    path: "{{ K8S_DATA_BASE_DIR }}/kubelet/kubelet-plugins/volume/exec"
+    state: directory
+    mode: 0755
+
+- name: 启动kubelet服务
+  systemd:
+    name: kubelet
+    daemon_reload: yes
+    enabled: yes
+    state: started

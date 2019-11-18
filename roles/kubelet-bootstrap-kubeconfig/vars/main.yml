@@ -1,0 +1,1 @@
+KUBE_NODES: "{% for h in groups['kube-node'] %}{{ hostvars[h]['NODE_NAME'] }} {% endfor %}"

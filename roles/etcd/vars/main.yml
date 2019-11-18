@@ -1,0 +1,6 @@
+# 所有节点的ip
+TMP_NODES: "{% for h in groups['etcd'] %}{{ hostvars[h]['NODE_NAME'] }}=https://{{ h }}:2380,{% endfor %}"
+ETCD_NODES: "{{ TMP_NODES.rstrip(',') }}"
+
+ETCD_DATA_DIR: "{{K8S_DATA_BASE_DIR}}/etcd/data"
+ETCD_WAL_DIR: "{{K8S_DATA_BASE_DIR}}/etcd/wal"

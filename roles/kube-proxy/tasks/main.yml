@@ -1,0 +1,70 @@
+- name: 分发kube-proxy 二进制文件
+  unarchive:
+    src: kube-proxy.tar.gz
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+
+- name: 分发自签名ca根证书相关文件
+  copy:
+    src: "{{K8S_BASE_DIR}}/temp/{{item}}"
+    dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
+    mode: 0644
+  loop:
+    - ca.pem
+    - ca-key.pem
+    - ca-config.json
+
+- name: 准备kube-proxy证书签名请求配置文件
+  template:
+    src: kube-proxy-csr.json.tpl
+    dest: "{{K8S_BASE_DIR}}/cert/kube-proxy-csr.json"
+    mode: 0644
+
+- name: 生成kube-proxy证书
+  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
+          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
+          -profile=kubernetes kube-proxy-csr.json | cfssljson -bare kube-proxy"
+
+- name: 生成kube-proxy访问配置文件,设置集群参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-cluster kubernetes \
+          --certificate-authority={{K8S_BASE_DIR}}/cert/ca.pem --embed-certs=true \
+          --server=https://127.0.0.1:8443 --kubeconfig=kube-proxy.kubeconfig"
+
+- name: 生成kube-proxy访问配置文件,设置客户端认证参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-credentials kube-proxy \
+          --client-certificate={{K8S_BASE_DIR}}/cert/kube-proxy.pem \
+          --client-key={{K8S_BASE_DIR}}/cert/kube-proxy-key.pem --embed-certs=true \
+          --kubeconfig=kube-proxy.kubeconfig"
+
+- name: 生成kube-proxy访问配置文件,设置上下文参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-context default \
+          --cluster=kubernetes --user=kube-proxy --kubeconfig=kube-proxy.kubeconfig"
+
+- name: 生成kube-proxy访问配置文件,设置默认上下文
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config use-context default \
+          --kubeconfig=kube-proxy.kubeconfig"
+
+- name: 分发kube-proxy 配置文件
+  template:
+    src: kube-proxy-config.yaml.tpl
+    dest: "{{ K8S_BASE_DIR }}/conf/kube-proxy-config.yaml"
+    mode: 0644
+
+- name: 分发kube-proxy systemd 文件
+  template:
+    src: kube-proxy.service.tpl
+    dest: /etc/systemd/system/kube-proxy.service
+    mode: 0644
+
+- name: 创建kube-proxy 数据目录
+  file:
+    path: "{{ K8S_DATA_BASE_DIR }}/kube-proxy"
+    state: directory
+    mode: 0755
+
+- name: 启动kube-proxy服务
+  systemd:
+    name: kube-proxy
+    daemon_reload: yes
+    enabled: yes
+    state: started

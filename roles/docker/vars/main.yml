@@ -1,0 +1,4 @@
+DOCKER_DIR: "{{ K8S_DATA_BASE_DIR }}/docker"
+# Docker Mirrors
+DOCKER_MIRRORS: '["https://docker.mirrors.ustc.edu.cn", "https://hub-mirror.c.163.com"]'
+INSECURE_REGISTRIES: '["localhost:35000"]'

@@ -1,0 +1,69 @@
+- name: 分发kube-controller-manager 二进制文件
+  unarchive:
+    src: kube-controller-manager.tar.gz
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+
+- name: 准备kube-controller-manager证书签名请求配置文件
+  template:
+    src: kube-controller-manager-csr.json.tpl
+    dest: "{{K8S_BASE_DIR}}/cert/kube-controller-manager-csr.json"
+    mode: 0644
+
+- name: 生成kube-controller-manager证书
+  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
+          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
+          -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager"
+
+- name: 生成kube-controller-manager访问配置文件,设置集群参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-cluster kubernetes \
+          --certificate-authority={{K8S_BASE_DIR}}/cert/ca.pem --embed-certs=true \
+          --server=https://{{ inventory_hostname }}:6443 --kubeconfig=kube-controller-manager.kubeconfig"
+
+- name: 生成kube-controller-manager访问配置文件,设置客户端认证参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-credentials system:kube-controller-manager \
+          --client-certificate={{K8S_BASE_DIR}}/cert/kube-controller-manager.pem \
+          --client-key={{K8S_BASE_DIR}}/cert/kube-controller-manager-key.pem --embed-certs=true \
+          --kubeconfig=kube-controller-manager.kubeconfig"
+
+- name: 生成kube-controller-manager访问配置文件,设置上下文参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-context system:kube-controller-manager \
+          --cluster=kubernetes --user=system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig"
+
+- name: 生成kube-controller-manager访问配置文件,设置默认上下文
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config use-context system:kube-controller-manager \
+          --kubeconfig=kube-controller-manager.kubeconfig"
+
+- name: 分发kube-controller-manager systemd 文件
+  template:
+    src: kube-controller-manager.service.tpl
+    dest: /etc/systemd/system/kube-controller-manager.service
+    mode: 0644
+
+- name: 创建kube-controller-manager 数据目录
+  file:
+    path: "{{ K8S_DATA_BASE_DIR }}/kube-controller-manager"
+    state: directory
+    mode: 0755
+
+- name: 启动kube-controller-manager服务
+  systemd:
+    name: kube-controller-manager
+    daemon_reload: yes
+    enabled: yes
+    state: started
+
+- name: 等待kube-controller-manager 启动完成
+  wait_for:
+    timeout: 30
+
+- block:
+  - name: 查看kube-controller-manager集群信息,注册数据
+    shell: "kubectl get endpoints kube-controller-manager --namespace=kube-system -o yaml"
+    register: rest
+
+  - name: 查看kube-controller-manager集群信息
+    debug:
+      var: rest.stdout
+
+  when: inventory_hostname == groups['kube-master'][0]

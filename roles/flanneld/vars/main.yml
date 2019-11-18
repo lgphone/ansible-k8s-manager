@@ -1,0 +1,5 @@
+# 所有节点的ip
+TMP_NODES: "{% for h in groups['etcd'] %}https://{{ h }}:2379,{% endfor %}"
+ETCD_ENDPOINTS: "{{ TMP_NODES.rstrip(',') }}"
+
+FLANNEL_ETCD_PREFIX: "/kubernetes/network"

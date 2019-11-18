@@ -1,0 +1,12 @@
+- name: 生成根证书（自签名）
+  shell: 'cd {{K8S_TEMP_DIR}} && for node_name in {{ KUBE_NODES }};do \
+          if [[ ! -f "kubelet-bootstrap-${node_name}.kubeconfig" ]];then \
+          export BOOTSTRAP_TOKEN=$(kubeadm token create  --description kubelet-bootstrap-token \
+          --groups system:bootstrappers:${node_name} --kubeconfig ~/.kube/config); \
+          kubectl config set-cluster kubernetes --certificate-authority={{ K8S_BASE_DIR }}/cert/ca.pem \
+          --embed-certs=true --server=https://127.0.0.1:8443 --kubeconfig=kubelet-bootstrap-${node_name}.kubeconfig; \
+          kubectl config set-credentials kubelet-bootstrap --token=${BOOTSTRAP_TOKEN} \
+          --kubeconfig=kubelet-bootstrap-${node_name}.kubeconfig; \
+          kubectl config set-context default --cluster=kubernetes --user=kubelet-bootstrap \
+          --kubeconfig=kubelet-bootstrap-${node_name}.kubeconfig; kubectl config use-context default \
+          --kubeconfig=kubelet-bootstrap-${node_name}.kubeconfig;fi;done'

@@ -1,0 +1,156 @@
+- name: 分发自签名ca根证书相关文件
+  copy:
+    src: "{{K8S_BASE_DIR}}/temp/{{item}}"
+    dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
+    mode: 0644
+  loop:
+    - ca.pem
+    - ca-key.pem
+    - ca-config.json
+
+- name: 准备admin证书签名请求配置文件
+  template:
+    src: admin-csr.json.tpl
+    dest: "{{K8S_BASE_DIR}}/cert/admin-csr.json"
+    mode: 0644
+
+- name: 生成admin证书
+  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
+          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
+          -profile=kubernetes admin-csr.json | cfssljson -bare admin"
+
+- name: 准备aggregator证书签名请求配置文件
+  template:
+    src: aggregator-csr.json.tpl
+    dest: "{{K8S_BASE_DIR}}/cert/aggregator-csr.json"
+    mode: 0644
+
+- name: 生成aggregator证书
+  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
+          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
+          -profile=kubernetes aggregator-csr.json | cfssljson -bare aggregator"
+
+- name: 生成kubectl客户端访问配置文件,设置集群参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-cluster kubernetes \
+          --certificate-authority={{K8S_BASE_DIR}}/cert/ca.pem --embed-certs=true \
+          --server=https://{{ inventory_hostname }}:6443 --kubeconfig=kubectl.kubeconfig"
+
+- name: 生成kubectl客户端访问配置文件,设置客户端认证参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-credentials admin \
+          --client-certificate={{K8S_BASE_DIR}}/cert/admin.pem \
+          --client-key={{K8S_BASE_DIR}}/cert/admin-key.pem --embed-certs=true \
+          --kubeconfig=kubectl.kubeconfig"
+
+- name: 生成kubectl客户端访问配置文件,设置上下文参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-context kubernetes \
+          --cluster=kubernetes --user=admin --kubeconfig=kubectl.kubeconfig"
+
+- name: 生成kubectl客户端访问配置文件,设置默认上下文
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config use-context kubernetes \
+          --kubeconfig=kubectl.kubeconfig"
+
+- name: 创建kubectl 配置文件目录
+  file:
+    path: /root/.kube
+    state: directory
+    mode: 0755
+
+- name: 复制kubectl客户端访问配置文件到对应目录
+  shell: "cp -r {{K8S_BASE_DIR}}/conf/kubectl.kubeconfig /root/.kube/config"
+
+- name: 分发kube-apiserver相关二进制文件
+  unarchive:
+    src: "{{ item }}"
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+  loop:
+    - kube-apiserver.tar.gz
+    - kubeadm.tar.gz
+    - kubectl.tar.gz
+
+- name: 注册随机字符串变量
+  shell: "head -c 32 /dev/urandom | base64"
+  register: random_cmd_res
+
+- name: 设置变量
+  set_fact:
+    ENCRYPTION_KEY: "{{random_cmd_res.stdout}}"
+
+- name: 生成加密配置文件
+  template:
+    src: encryption-config.yaml.tpl
+    dest: "{{K8S_BASE_DIR}}/conf/encryption-config.yaml"
+    mode: 0644
+
+- name: 分发审计策略文件
+  copy:
+    src: audit-policy.yaml
+    dest: "{{K8S_BASE_DIR}}/conf/audit-policy.yaml"
+    mode: 0644
+
+- name: 准备api-server证书签名请求配置文件
+  template:
+    src: kubernetes-csr.json.tpl
+    dest: "{{K8S_BASE_DIR}}/cert/kubernetes-csr.json"
+    mode: 0644
+
+- name: 生成api-server证书
+  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
+          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
+          -profile=kubernetes kubernetes-csr.json | cfssljson -bare kubernetes"
+
+- name: 分发kube-apiserver systemd 文件
+  template:
+    src: kube-apiserver.service.tpl
+    dest: /etc/systemd/system/kube-apiserver.service
+
+- name: 创建kube-apiserver 数据目录
+  file:
+    path: "{{ K8S_DATA_BASE_DIR }}/kube-apiserver"
+    state: directory
+    mode: 0755
+
+- name: 启动kube-apiserver服务
+  systemd:
+    name: kube-apiserver
+    daemon_reload: yes
+    enabled: yes
+    state: started
+
+- name: 等待kube-apiserver 写入etcd数据
+  wait_for:
+    timeout: 30
+
+- block:
+  - name: 查看kube-apiserver在etcd中的数据,注册数据
+    shell: "ETCDCTL_API=3 etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
+            --cacert={{K8S_BASE_DIR}}/cert/ca.pem --cert={{K8S_BASE_DIR}}/cert/kubernetes.pem \
+            --key={{K8S_BASE_DIR}}/cert/kubernetes-key.pem get /registry/ --prefix --keys-only|head"
+    register: rest
+
+  - name: 查看kube-apiserver在etcd中的数据
+    debug:
+      var: rest.stdout
+
+  - name: 查看集群信息,注册数据
+    shell: "kubectl cluster-info"
+    register: rest
+
+  - name: 查看集群信息
+    debug:
+      var: rest.stdout
+
+  - name: 查看集群命名空间,注册数据
+    shell: "kubectl get all --all-namespaces"
+    register: rest
+
+  - name: 查看集群命名空间
+    debug:
+      var: rest.stdout
+
+  - name: 授予 kube-apiserver 访问 kubelet API 的权限
+    shell: "kubectl create clusterrolebinding kube-apiserver:kubelet-apis \
+            --clusterrole=system:kubelet-api-admin --user kubernetes"
+    ignore_errors: true
+
+  when: inventory_hostname == groups['kube-master'][0]

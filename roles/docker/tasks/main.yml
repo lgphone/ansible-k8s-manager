@@ -1,0 +1,33 @@
+- name: 分发docker 二进制文件
+  unarchive:
+    src: docker-bin.tar.gz
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+
+- name: 创建docker数据目录
+  file:
+    path: "{{ DOCKER_DIR }}/{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - data
+    - exec
+
+- name: 分发docker systemd unit文件
+  template:
+    src: docker.service.tpl
+    dest: /etc/systemd/system/docker.service
+    mode: 0644
+
+- name: 分发docker 启动配置文件
+  template:
+    src: docker-daemon.json.tpl
+    dest: "{{ DOCKER_DIR }}/daemon.json"
+    mode: 0644
+
+- name: 启动docker服务
+  systemd:
+    name: docker
+    daemon_reload: yes
+    enabled: yes
+    state: started

@@ -1,0 +1,69 @@
+- name: 分发flanneld 二进制文件
+  unarchive:
+    src: flanneld-bin.tar.gz
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+
+- name: 分发自签名ca根证书相关文件
+  copy:
+    src: "{{K8S_BASE_DIR}}/temp/{{item}}"
+    dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
+    mode: 0644
+  loop:
+    - ca.pem
+    - ca-key.pem
+    - ca-config.json
+
+- name: 准备flanneld证书签名请求配置文件
+  template:
+    src: flanneld-csr.json.tpl
+    dest: "{{K8S_BASE_DIR}}/cert/flanneld-csr.json"
+    mode: 0644
+
+- name: 生成flanneld证书
+  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
+          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
+          -profile=kubernetes flanneld-csr.json | cfssljson -bare flanneld"
+
+- name: 分发flanneld systemd 文件
+  template:
+    src: flanneld.service.tpl
+    dest: /etc/systemd/system/flanneld.service
+    mode: 0644
+
+- block:
+  - name: 检查etcd中是否已经写入pod网段
+    shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
+            --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
+            --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem get {{FLANNEL_ETCD_PREFIX}}/config"
+    ignore_errors: true
+    register: configed_res
+
+  - name: 向etcd 写入pod网段信息
+    shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
+            --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
+            --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem mk {{FLANNEL_ETCD_PREFIX}}/config \
+            '{\"Network\":\"'{{CLUSTER_CIDR}}'\", \"SubnetLen\": 21, \"Backend\": {\"Type\": \"vxlan\"}}'"
+    when: configed_res.rc != 0
+
+  when: inventory_hostname == groups['kube-master'][0]
+
+- name: 启动flanneld服务
+  systemd:
+    name: flanneld
+    daemon_reload: yes
+    enabled: yes
+    state: started
+
+- block:
+  - name: 查看flannel在etcd中的数据,注册数据
+    shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
+            --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
+            --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem get {{FLANNEL_ETCD_PREFIX}}/config"
+    register: rest
+
+  - name: 查看flannel在etcd中的数据
+    debug:
+      var: rest.stdout
+
+  when: inventory_hostname == groups['kube-master'][0]

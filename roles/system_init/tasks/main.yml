@@ -1,0 +1,178 @@
+- name: "修改主机名"
+  hostname:
+    name: "{{ NODE_NAME }}"
+
+- name: 设置时区
+  timezone:
+    name: Asia/Shanghai
+
+- name: 同步hosts文件
+  template:
+    src: hosts.tpl
+    dest: /etc/hosts
+    backup: yes
+  tags:
+    - sync_hosts
+
+- name: 禁用系统 swap
+  shell: "swapoff -a && sysctl -w vm.swappiness=0"
+  ignore_errors: true
+
+- name: 删除fstab swap 相关配置
+  lineinfile:
+    path: /etc/fstab
+    regexp: 'swap'
+    state: absent
+    backup: 'yes'
+
+- name: 清理iptables规则
+  shell: "iptables -F && iptables -X && iptables -F -t nat && iptables -X -t nat && iptables -P FORWARD ACCEPT"
+  ignore_errors: true
+
+- name: 删除firewalld包
+  yum:
+    name:
+      - firewalld
+      - python-firewall
+      - firewalld-filesystem
+    state: removed
+
+- name: 添加epel仓库
+  yum:
+    name: epel-release
+    state: present
+
+- name: 安装基础软件包
+  yum:
+    name:
+      - bash-completion     # bash命令补全工具，需要重新登录服务器生效
+      - conntrack-tools     # ipvs 模式需要
+      - ipset               # ipvs 模式需要
+      - ipvsadm             # ipvs 模式需要
+      - libseccomp          # 安装containerd需要
+      - nfs-utils           # 挂载nfs 共享文件需要 (创建基于 nfs的PV 需要)
+      - psmisc              # 安装psmisc 才能使用命令killall，keepalive的监测脚本需要
+      - rsync               # 文件同步工具，分发证书等配置文件需要
+      - socat               # 用于port forwarding
+      - jq
+      - curl
+      - sysstat
+      - wget
+      - git
+      - lrzsz
+      - unzip
+      - htop
+      - iftop
+      - unzip
+      - gcc
+      - gcc-c++
+      - vim-enhanced
+      - bind-utils
+      - telnet
+      - nmap
+      - tree
+    state: present
+
+- name: 加载内核模块
+  modprobe: name={{ item }} state=present
+  with_items:
+    - br_netfilter
+    - ip_vs
+    - ip_vs_rr
+    - ip_vs_wrr
+    - ip_vs_sh
+
+- name: 临时关闭 selinux
+  shell: "setenforce 0"
+  failed_when: false
+
+- name: 永久关闭 selinux
+  lineinfile:
+    dest: /etc/selinux/config
+    regexp: "^SELINUX="
+    line: "SELINUX=disabled"
+
+- name: 优化永久文件描述符
+  blockinfile:
+    path: /etc/security/limits.conf
+    block: |
+      * soft nproc 65536
+      * hard nproc 65536
+      * soft nofile 65536
+      * hard nofile 65536
+
+- name: 优化开机文件描述符
+  lineinfile:
+    path: /etc/rc.local
+    line: 'ulimit -SHn 65536'
+
+- name: 优化当前环境文件描述符
+  shell: "ulimit -SHn 65536 && chmod +x /etc/rc.d/rc.local"
+
+- name: 优化邮箱通知
+  lineinfile:
+    path: /etc/profile
+    line: "unset MAILCHECK"
+
+- name: 添加k8s sysctl配置
+  copy:
+    src: kubernets-sysctl.conf
+    dest: /etc/sysctl.d/kubernets-sysctl.conf
+
+- name: 激活 k8s sysctl配置
+  shell: "sysctl -p /etc/sysctl.d/kubernets-sysctl.conf"
+
+- name: 停止 postfix 服务
+  systemd:
+    name: postfix
+    state: stopped
+    enabled: no
+
+- name: 优化journal服务,配置目录
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - /var/log/journal
+    - /etc/systemd/journald.conf.d
+
+- name: 优化journal服务,添加jouranl配置
+  copy:
+    src: 99-prophet.conf
+    dest: /etc/systemd/journald.conf.d/99-prophet.conf
+
+- name: 优化journal服务,重启服务
+  systemd:
+    name: systemd-journald
+    state: restarted
+
+- name: 创建k8s基础目录
+  file:
+    path: "{{ K8S_BASE_DIR }}/{{item}}"
+    state: directory
+    mode: 0755
+    recurse: yes
+  loop:
+    - cert
+    - bin
+    - conf
+    - temp
+
+- name: 创建k8s数据存储基础目录
+  file:
+    path: "{{K8S_DATA_BASE_DIR}}"
+    state: directory
+    mode: 0755
+    recurse: yes
+
+- name: 分发ssl相关工具
+  unarchive:
+    src: kube-ca-bin.tar.gz
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+
+- name: 添加k8s bin PATH变量
+  lineinfile:
+    path: /etc/profile
+    line: 'export PATH=$PATH:{{K8S_BASE_DIR}}/bin'

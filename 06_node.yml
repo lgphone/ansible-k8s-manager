@@ -1,0 +1,8 @@
+- hosts:
+    - kube-node
+  roles:
+    - docker
+    - kube-nginx
+    - kube-proxy
+    - kubelet-bootstrap-kubeconfig
+    - kubelet

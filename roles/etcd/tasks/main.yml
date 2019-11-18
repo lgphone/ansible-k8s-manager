@@ -1,0 +1,49 @@
+- name: 创建etcd 数据目录
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    recurse: yes
+  loop:
+    - "{{ ETCD_DATA_DIR }}"
+    - "{{ ETCD_WAL_DIR }}"
+
+- name: 分发etcd 二进制文件
+  unarchive:
+    src: etcd-bin.tar.gz
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+
+- name: 分发自签名ca根证书相关文件
+  copy:
+    src: "{{K8S_BASE_DIR}}/temp/{{item}}"
+    dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
+    mode: 0644
+  loop:
+    - ca.pem
+    - ca-key.pem
+    - ca-config.json
+
+- name: 准备etcd证书签名请求配置文件
+  template:
+    src: etcd-csr.json.tpl
+    dest: "{{K8S_BASE_DIR}}/cert/etcd-csr.json"
+    mode: 0644
+
+- name: 生成etcd证书
+  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
+          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
+          -profile=kubernetes etcd-csr.json | cfssljson -bare etcd"
+
+- name: 分发etcd systemd 文件
+  template:
+    src: etcd.service.tpl
+    dest: /etc/systemd/system/etcd.service
+    mode: 0644
+
+- name: 启动etcd服务
+  systemd:
+    name: etcd
+    daemon_reload: yes
+    enabled: yes
+    state: started

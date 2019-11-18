@@ -1,0 +1,75 @@
+- name: 分发kube-scheduler 二进制文件
+  unarchive:
+    src: kube-scheduler.tar.gz
+    dest: "{{K8S_BASE_DIR}}/bin/"
+    mode: 0755
+
+- name: 准备kube-scheduler证书签名请求配置文件
+  template:
+    src: kube-scheduler-csr.json.tpl
+    dest: "{{K8S_BASE_DIR}}/cert/kube-scheduler-csr.json"
+    mode: 0644
+
+- name: 生成kube-scheduler证书
+  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
+          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
+          -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler"
+
+- name: 生成kube-scheduler访问配置文件,设置集群参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-cluster kubernetes \
+          --certificate-authority={{K8S_BASE_DIR}}/cert/ca.pem --embed-certs=true \
+          --server=https://{{ inventory_hostname }}:6443 --kubeconfig=kube-scheduler.kubeconfig"
+
+- name: 生成kube-scheduler访问配置文件,设置客户端认证参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-credentials system:kube-scheduler \
+          --client-certificate={{K8S_BASE_DIR}}/cert/kube-scheduler.pem \
+          --client-key={{K8S_BASE_DIR}}/cert/kube-scheduler-key.pem --embed-certs=true \
+          --kubeconfig=kube-scheduler.kubeconfig"
+
+- name: 生成kube-scheduler访问配置文件,设置上下文参数
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-context system:kube-scheduler \
+          --cluster=kubernetes --user=system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig"
+
+- name: 生成kube-scheduler访问配置文件,设置默认上下文
+  shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config use-context system:kube-scheduler \
+          --kubeconfig=kube-scheduler.kubeconfig"
+
+- name: 分发kube-scheduler 配置文件
+  template:
+    src: kube-scheduler-config.yaml.tpl
+    dest: "{{ K8S_BASE_DIR }}/conf/kube-scheduler-config.yaml"
+    mode: 0644
+
+- name: 分发kube-scheduler systemd 文件
+  template:
+    src: kube-scheduler.service.tpl
+    dest: /etc/systemd/system/kube-scheduler.service
+    mode: 0644
+
+- name: 创建kube-scheduler 数据目录
+  file:
+    path: "{{ K8S_DATA_BASE_DIR }}/kube-scheduler"
+    state: directory
+    mode: 0755
+
+- name: 启动kube-scheduler 服务
+  systemd:
+    name: kube-scheduler
+    daemon_reload: yes
+    enabled: yes
+    state: started
+
+- name: 等待kube-scheduler 启动完成
+  wait_for:
+    timeout: 30
+
+- block:
+  - name: 查看kube-scheduler 集群信息,注册数据
+    shell: "kubectl get endpoints kube-scheduler --namespace=kube-system -o yaml"
+    register: rest
+
+  - name: 查看kube-scheduler 集群信息
+    debug:
+      var: rest.stdout
+
+  when: inventory_hostname == groups['kube-master'][0]
