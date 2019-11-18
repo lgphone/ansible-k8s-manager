@@ -5,10 +5,11 @@
     - kube-nginx
     - kube-proxy
 
-- hosts:
-    - localhost
+- hosts: localhost
   roles:
     - kubelet-bootstrap-kubeconfig
 
 - hosts:
+    - kube-node
+  roles:
     - kubelet
