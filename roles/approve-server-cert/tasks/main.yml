@@ -12,13 +12,14 @@
 - name: 检查当前csr状态处于Pending的数据，注册
   shell: "kubectl get csr|grep 'system:node'|grep Pending|wc -l"
   register: rets
-  until: rets.stdout >= groups['kube-node']|length
+  until: rets.stdout|int >= groups['kube-node']|length
   retries: 20
   delay: 3
 
 - block:
   - name: approve node cert csr
-    shell: "kubectl get csr|grep 'system:node'|grep Pending|awk '{print $1}'|xargs kubectl certificate approve"
+    shell: "csrs=$(kubectl get csr|grep 'system:node'|grep Pending|awk '{print $1}'); \
+            for c in ${csrs};do kubectl certificate approve $c;done"
 
   - name: 再次检查当前csr状态，注册
     shell: "kubectl get csr"
