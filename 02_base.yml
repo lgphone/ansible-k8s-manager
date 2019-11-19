@@ -1,0 +1,14 @@
+- hosts:
+    - localhost
+  roles:
+    - root_ca
+
+- hosts: etcd
+  roles:
+    - etcd
+
+- hosts:
+    - kube-master
+    - kube-node
+  roles:
+    - flanneld
