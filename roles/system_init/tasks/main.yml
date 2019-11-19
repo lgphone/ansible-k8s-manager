@@ -42,7 +42,12 @@
     name: epel-release
     state: present
 
-- name: 安装基础软件包
+- name: 安装基础开发包
+  yum:
+    name: "@base"
+    state: present
+
+- name: 安装必须的软件包
   yum:
     name:
       - bash-completion     # bash命令补全工具，需要重新登录服务器生效
