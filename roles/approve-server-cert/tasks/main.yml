@@ -10,9 +10,9 @@
     var: rets.stdout
 
 - name: 检查当前csr状态处于Pending的数据，注册
-  shell: "kubectl get csr|grep 'system:node'|grep Pending"
+  shell: "kubectl get csr|grep 'system:node'|grep Pending|wc -l"
   register: rets
-  until: rets.rc == 0
+  until: rets.stdout >= groups['kube-node']|length
   retries: 20
   delay: 3
 
