@@ -1,13 +1,13 @@
 - name: 检查当前csr状态，注册
   shell: "kubectl get csr"
   register: ret
-  until: ret.rc == 0
+  until: rets.rc == 0
   retries: 10
   delay: 3
 
 - name: 查看当前csr状态
   debug:
-    var: ret.stdout
+    var: rets.stdout
 
 - block:
   - name: approve node cert csr
@@ -23,6 +23,7 @@
   - name: 再次查看当前csr状态
     debug:
       var: ret.stdout
+    when: ret is defined
 
   - name: 检查当前的 kube nodes 信息，注册
     shell: "kubectl get nodes"
@@ -34,7 +35,8 @@
   - name: 查看当前kube nodes 信息
     debug:
       var: ret.stdout
-  when: ret.stdout
+    when: ret is defined
+  when: rets.stdout
 
 - block:
   - name: 检查当前的 kube nodes 信息，注册
@@ -47,4 +49,5 @@
   - name: 查看当前kube nodes 信息
     debug:
       var: ret.stdout
+    when: ret is defined
   when: not ret.stdout
