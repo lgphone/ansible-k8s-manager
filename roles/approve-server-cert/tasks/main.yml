@@ -9,6 +9,13 @@
   debug:
     var: rets.stdout
 
+- name: 检查当前csr状态处于Pending的数据，注册
+  shell: "kubectl get csr|grep 'system:node'|grep Pending"
+  register: rets
+  until: rets.rc == 0
+  retries: 20
+  delay: 3
+
 - block:
   - name: approve node cert csr
     shell: "kubectl get csr|grep 'system:node'|grep Pending|awk '{print $1}'|xargs kubectl certificate approve"
