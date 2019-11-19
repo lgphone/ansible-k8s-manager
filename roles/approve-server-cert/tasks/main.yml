@@ -1,9 +1,9 @@
 - name: 检查当前csr状态，注册
   shell: "kubectl get csr"
   register: rets
-  until: rets.rc == 0
+  until: rets.stdout
   retries: 10
-  delay: 3
+  delay: 5
 
 - name: 查看当前csr状态
   debug:

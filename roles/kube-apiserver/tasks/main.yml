@@ -168,4 +168,8 @@
   - name: 创建自动 approve CSR
     shell: "cd {{K8S_BASE_DIR}}/temp/ && kubectl apply -f csr-crb.yaml"
 
+  - name: 创建自动 approve CSR 授权
+    shell: "kubectl create clusterrolebinding kubelet-bootstrap \
+            --clusterrole=system:node-bootstrapper --group=system:bootstrappers"
+
   when: inventory_hostname == groups['kube-master'][0]
