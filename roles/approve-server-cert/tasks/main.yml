@@ -1,6 +1,6 @@
 - name: 检查当前csr状态，注册
   shell: "kubectl get csr"
-  register: ret
+  register: rets
   until: rets.rc == 0
   retries: 10
   delay: 3
@@ -50,4 +50,4 @@
     debug:
       var: ret.stdout
     when: ret is defined
-  when: not ret.stdout
+  when: not rets.stdout
