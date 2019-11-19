@@ -27,3 +27,10 @@
     daemon_reload: yes
     enabled: yes
     state: started
+
+- name: 检查kube-nginx状态，确保kube-nginx启动成功
+  shell: "systemctl status kube-nginx|grep Active"
+  register: ret
+  until: ret.rc == 0
+  retries: 10
+  delay: 3

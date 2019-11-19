@@ -31,3 +31,10 @@
     daemon_reload: yes
     enabled: yes
     state: started
+
+- name: 检查docker状态，确保docker启动成功
+  shell: "systemctl status docker|grep Active"
+  register: ret
+  until: ret.rc == 0
+  retries: 10
+  delay: 3

@@ -68,3 +68,10 @@
     daemon_reload: yes
     enabled: yes
     state: started
+
+- name: 检查kube-proxy状态，确保kube-proxy启动成功
+  shell: "systemctl status kube-proxy|grep Active"
+  register: ret
+  until: ret.rc == 0
+  retries: 10
+  delay: 3

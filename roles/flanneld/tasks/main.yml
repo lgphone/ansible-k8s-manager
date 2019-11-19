@@ -31,22 +31,14 @@
     dest: /etc/systemd/system/flanneld.service
     mode: 0644
 
-- block:
-  - name: 检查etcd中是否已经写入pod网段
-    shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
-            --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
-            --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem get {{FLANNEL_ETCD_PREFIX}}/config"
-    ignore_errors: true
-    register: configed_res
-
-  - name: 向etcd 写入pod网段信息
-    shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
-            --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
-            --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem mk {{FLANNEL_ETCD_PREFIX}}/config \
-            '{\"Network\":\"'{{CLUSTER_CIDR}}'\", \"SubnetLen\": 21, \"Backend\": {\"Type\": \"vxlan\"}}'"
-    when: configed_res.rc != 0
+- name: 向etcd 写入pod网段信息
+  shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
+          --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
+          --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem mk {{FLANNEL_ETCD_PREFIX}}/config \
+          '{\"Network\":\"'{{CLUSTER_CIDR}}'\", \"SubnetLen\": 21, \"Backend\": {\"Type\": \"vxlan\"}}'"
 
   when: inventory_hostname == groups['kube-master'][0]
+  tags: write_cluster_cidr
 
 - name: 启动flanneld服务
   systemd:
@@ -54,6 +46,13 @@
     daemon_reload: yes
     enabled: yes
     state: started
+
+- name: 检查flanneld状态，确保flanneld启动成功
+  shell: "systemctl status flanneld|grep Active"
+  register: ret
+  until: ret.rc == 0
+  retries: 10
+  delay: 3
 
 - block:
   - name: 查看flannel在etcd中的数据,注册数据

@@ -34,3 +34,10 @@
     daemon_reload: yes
     enabled: yes
     state: started
+
+- name: 检查kubelet状态，确保kubelet启动成功
+  shell: "systemctl status kubelet|grep Active"
+  register: ret
+  until: ret.rc == 0
+  retries: 10
+  delay: 3

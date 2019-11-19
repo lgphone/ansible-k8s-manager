@@ -117,9 +117,12 @@
     enabled: yes
     state: started
 
-- name: 等待kube-apiserver 写入etcd数据
-  wait_for:
-    timeout: 30
+- name: 检查kube-apiserver状态，确保kube-apiserver启动成功
+  shell: "systemctl status kube-apiserver|grep Active"
+  register: ret
+  until: ret.rc == 0
+  retries: 10
+  delay: 3
 
 - block:
   - name: 查看kube-apiserver在etcd中的数据,注册数据
@@ -127,6 +130,9 @@
             --cacert={{K8S_BASE_DIR}}/cert/ca.pem --cert={{K8S_BASE_DIR}}/cert/kubernetes.pem \
             --key={{K8S_BASE_DIR}}/cert/kubernetes-key.pem get /registry/ --prefix --keys-only|head"
     register: rest
+    until: rest.rc == 0
+    retries: 10
+    delay: 3
 
   - name: 查看kube-apiserver在etcd中的数据
     debug:
@@ -152,5 +158,14 @@
     shell: "kubectl create clusterrolebinding kube-apiserver:kubelet-apis \
             --clusterrole=system:kubelet-api-admin --user kubernetes"
     ignore_errors: true
+
+  - name: 拷贝自动 approve CSR 请求配置文件
+    copy:
+      src: csr-crb.yaml
+      dest: "{{K8S_BASE_DIR}}/temp/csr-crb.yaml"
+      mode: 0644
+
+  - name: 创建自动 approve CSR
+    shell: "cd {{K8S_BASE_DIR}}/temp/ && kubectl apply -f csr-crb.yaml"
 
   when: inventory_hostname == groups['kube-master'][0]

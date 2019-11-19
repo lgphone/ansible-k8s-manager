@@ -47,3 +47,10 @@
     daemon_reload: yes
     enabled: yes
     state: started
+
+- name: 检查etcd状态，确保etcd启动成功
+  shell: "systemctl status etcd|grep Active"
+  register: ret
+  until: ret.rc == 0
+  retries: 10
+  delay: 3
