@@ -77,7 +77,13 @@
       - telnet
       - nmap
       - tree
+      - chrony
     state: present
+
+- name: 启动时间服务
+  systemd:
+    name: chronyd
+    state: restarted
 
 - name: 加载内核模块
   modprobe: name={{ item }} state=present
