@@ -47,6 +47,7 @@
 
 - name: 更新yum缓存
   shell: "yum makecache"
+  warn: false
 
 - name: yum安装base group
   yum:
