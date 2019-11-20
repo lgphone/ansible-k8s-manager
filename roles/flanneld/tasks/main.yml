@@ -11,7 +11,7 @@
     shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
             --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
             --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem rm {{FLANNEL_ETCD_PREFIX}}"
-    when: (inventory_hostname == groups['kube-master'][0]) and (ret.rc == 0)
+    when: inventory_hostname == groups['kube-master'][0] and FORCE_INSTALL == 1
 
   - name: 分发flanneld 二进制文件
     unarchive:
