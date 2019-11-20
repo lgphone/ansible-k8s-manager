@@ -12,3 +12,4 @@
     - kube-node
   roles:
     - flanneld
+    - kube-nginx

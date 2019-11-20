@@ -2,7 +2,6 @@
     - kube-node
   roles:
     - docker
-    - kube-nginx
     - kube-proxy
 
 - hosts:

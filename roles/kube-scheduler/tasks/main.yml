@@ -17,7 +17,7 @@
 - name: 生成kube-scheduler访问配置文件,设置集群参数
   shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-cluster kubernetes \
           --certificate-authority={{K8S_BASE_DIR}}/cert/ca.pem --embed-certs=true \
-          --server=https://{{ inventory_hostname }}:6443 --kubeconfig=kube-scheduler.kubeconfig"
+          --server=https://127.0.0.1:8443 --kubeconfig=kube-scheduler.kubeconfig"
 
 - name: 生成kube-scheduler访问配置文件,设置客户端认证参数
   shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-credentials system:kube-scheduler \
