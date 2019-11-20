@@ -37,11 +37,16 @@
       - firewalld-filesystem
     state: removed
 
-- name: 添加epel仓库
-  yum:
-    name: epel-release
-    state: present
-    update_cache: yes
+- name: 更改yum源为阿里云源
+  copy:
+    src: "{{item}}"
+    dest: "/etc/yum.repos.d/{{item}}"
+  loop:
+    - CentOS-Base.repo
+    - epel.repo
+
+- name: 更新yum缓存
+  shell: "yum makecache"
 
 - name: yum安装base group
   yum:
