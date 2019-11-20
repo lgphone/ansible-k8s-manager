@@ -1,40 +1,48 @@
-- name: 分发docker 二进制文件
-  unarchive:
-    src: docker-bin.tar.gz
-    dest: "{{K8S_BASE_DIR}}/bin/"
-    mode: 0755
-
-- name: 创建docker数据目录
-  file:
-    path: "{{ DOCKER_DIR }}/{{ item }}"
-    state: directory
-    mode: 0755
-  loop:
-    - data
-    - exec
-
-- name: 分发docker systemd unit文件
-  template:
-    src: docker.service.tpl
-    dest: /etc/systemd/system/docker.service
-    mode: 0644
-
-- name: 分发docker 启动配置文件
-  template:
-    src: docker-daemon.json.tpl
-    dest: "{{ DOCKER_DIR }}/daemon.json"
-    mode: 0644
-
-- name: 启动docker服务
-  systemd:
-    name: docker
-    daemon_reload: yes
-    enabled: yes
-    state: started
-
-- name: 检查docker状态，确保docker启动成功
-  shell: "systemctl status docker|grep Active"
+- name: 检测是否已经部署
+  shell: "ls {{DOCKER_DIR}}/{data,exec}"
+  ignore_errors: true
   register: ret
-  until: ret.rc == 0
-  retries: 10
-  delay: 3
+
+- block:
+  - name: 分发docker 二进制文件
+    unarchive:
+      src: docker-bin.tar.gz
+      dest: "{{K8S_BASE_DIR}}/bin/"
+      mode: 0755
+
+  - name: 创建docker数据目录
+    file:
+      path: "{{ DOCKER_DIR }}/{{ item }}"
+      state: directory
+      mode: 0755
+    loop:
+      - data
+      - exec
+
+  - name: 分发docker systemd unit文件
+    template:
+      src: docker.service.tpl
+      dest: /etc/systemd/system/docker.service
+      mode: 0644
+
+  - name: 分发docker 启动配置文件
+    template:
+      src: docker-daemon.json.tpl
+      dest: "{{ DOCKER_DIR }}/daemon.json"
+      mode: 0644
+
+  - name: 启动docker服务
+    systemd:
+      name: docker
+      daemon_reload: yes
+      enabled: yes
+      state: started
+
+  - name: 检查docker状态，确保docker启动成功
+    shell: "systemctl status docker|grep Active"
+    register: ret
+    until: ret.rc == 0
+    retries: 10
+    delay: 3
+
+  when: ret.rc != 0 or FORCE_INSTALL == 1

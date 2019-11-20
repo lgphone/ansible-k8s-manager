@@ -1,7 +1,7 @@
 - hosts:
     - localhost
   roles:
-    - root_ca
+    - create-ca
 
 - hosts: etcd
   roles:

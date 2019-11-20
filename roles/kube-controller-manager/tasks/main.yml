@@ -1,19 +1,19 @@
+- name: 分发证书相关文件
+  copy:
+    src: "{{KK8S_TEMP_DIR}}/{{item}}"
+    dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
+    mode: 0644
+  loop:
+    - ca.pem
+    - ca-key.pem
+    - kube-controller-manager.pem
+    - kube-controller-manager-key.pem
+
 - name: 分发kube-controller-manager 二进制文件
   unarchive:
     src: kube-controller-manager.tar.gz
     dest: "{{K8S_BASE_DIR}}/bin/"
     mode: 0755
-
-- name: 准备kube-controller-manager证书签名请求配置文件
-  template:
-    src: kube-controller-manager-csr.json.tpl
-    dest: "{{K8S_BASE_DIR}}/cert/kube-controller-manager-csr.json"
-    mode: 0644
-
-- name: 生成kube-controller-manager证书
-  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
-          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
-          -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager"
 
 - name: 生成kube-controller-manager访问配置文件,设置集群参数
   shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-cluster kubernetes \

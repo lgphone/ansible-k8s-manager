@@ -1,29 +1,18 @@
+- name: 分发自签名ca根证书相关文件
+  copy:
+    src: "{{KK8S_TEMP_DIR}}/{{item}}"
+    dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
+    mode: 0644
+  loop:
+    - ca.pem
+    - kube-proxy.pem
+    - kube-proxy-key.pem
+
 - name: 分发kube-proxy 二进制文件
   unarchive:
     src: kube-proxy.tar.gz
     dest: "{{K8S_BASE_DIR}}/bin/"
     mode: 0755
-
-- name: 分发自签名ca根证书相关文件
-  copy:
-    src: "{{K8S_BASE_DIR}}/temp/{{item}}"
-    dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
-    mode: 0644
-  loop:
-    - ca.pem
-    - ca-key.pem
-    - ca-config.json
-
-- name: 准备kube-proxy证书签名请求配置文件
-  template:
-    src: kube-proxy-csr.json.tpl
-    dest: "{{K8S_BASE_DIR}}/cert/kube-proxy-csr.json"
-    mode: 0644
-
-- name: 生成kube-proxy证书
-  shell: "cd {{K8S_BASE_DIR}}/cert && cfssl gencert -ca={{K8S_BASE_DIR}}/cert/ca.pem \
-          -ca-key={{K8S_BASE_DIR}}/cert/ca-key.pem -config={{K8S_BASE_DIR}}/cert/ca-config.json \
-          -profile=kubernetes kube-proxy-csr.json | cfssljson -bare kube-proxy"
 
 - name: 生成kube-proxy访问配置文件,设置集群参数
   shell: "cd {{K8S_BASE_DIR}}/conf && kubectl config set-cluster kubernetes \
