@@ -19,3 +19,10 @@
 3. ansible-playbook -i inventory 02_base.yml # 部署基础项目etcd flanneld 等
 4. ansible-playbook -i inventory 03_master.yml # 部署master节点服务
 5. ansible-playbook -i inventory 04_node.yml # 部署node节点服务
+
+验证
+1. kubectl cluster-info  # 查看集群状态
+2. kubectl get nodes  # 查看node状态
+3. kubectl apply -f nginx-test.yml  # 创建一个服务，等待生效
+4. kubectl get pods -o wide  # 查看创建的pod
+5. kubectl get service   # 查看service
