@@ -41,13 +41,14 @@
   yum:
     name: epel-release
     state: present
+    update_cache: yes
 
-- name: 安装基础开发包
+- name: yum安装base group
   yum:
     name: "@base"
     state: present
 
-- name: 安装必须的软件包
+- name: 安装基础必备的软件包
   yum:
     name:
       - bash-completion     # bash命令补全工具，需要重新登录服务器生效
@@ -179,5 +180,8 @@
 
 - name: 添加k8s bin PATH变量
   lineinfile:
-    path: /etc/profile
+    path: "{{ item }}"
     line: 'export PATH=$PATH:{{K8S_BASE_DIR}}/bin'
+  loop:
+    - /etc/profile
+    - /root/.bashrc
