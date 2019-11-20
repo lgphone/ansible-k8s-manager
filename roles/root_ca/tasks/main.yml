@@ -4,16 +4,16 @@
   register: ret
 
 - block:
-    - name: 准备生成自签名ca证书配置相关文件
-      template:
-        src: "{{item.src}}"
-        dest: "{{K8S_TEMP_DIR}}/{{item.dest}}"
-        mode: 0644
-      loop:
-        - {src: ca-config.json.tpl, dest: ca-config.json}
-        - {src: ca-csr.json.tpl, dest: ca-csr.json}
+  - name: 准备生成自签名ca证书配置相关文件
+    template:
+      src: "{{item.src}}"
+      dest: "{{K8S_TEMP_DIR}}/{{item.dest}}"
+      mode: 0644
+    loop:
+      - {src: ca-config.json.tpl, dest: ca-config.json}
+      - {src: ca-csr.json.tpl, dest: ca-csr.json}
 
-    - name: 生成根证书（自签名）
-      shell: "cd {{K8S_TEMP_DIR}} && cfssl gencert -initca ca-csr.json | cfssljson -bare ca"
+  - name: 生成根证书（自签名）
+    shell: "cd {{K8S_TEMP_DIR}} && cfssl gencert -initca ca-csr.json | cfssljson -bare ca"
 
-  when: ret.rc != 0 or FORCE_INSTALL
+    when: ret.rc != 0 or FORCE_INSTALL
