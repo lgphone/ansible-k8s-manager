@@ -45,14 +45,11 @@
     - CentOS-Base.repo
     - epel.repo
 
-- name: 更新yum缓存
-  shell: "yum makecache"
-  warn: false
-
 - name: yum安装base group
   yum:
     name: "@base"
     state: present
+    update_cache: yes
 
 - name: 安装基础必备的软件包
   yum:
