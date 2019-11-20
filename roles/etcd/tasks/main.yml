@@ -69,4 +69,4 @@
     retries: 10
     delay: 3
 
-  when: ret.rc != 0 or FORCE_INSTALL
+  when: ret.rc != 0 or FORCE_INSTALL == 1

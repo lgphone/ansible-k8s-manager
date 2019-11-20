@@ -16,4 +16,4 @@
   - name: 生成根证书（自签名）
     shell: "cd {{K8S_TEMP_DIR}} && cfssl gencert -initca ca-csr.json | cfssljson -bare ca"
 
-  when: ret.rc != 0 or FORCE_INSTALL
+  when: ret.rc != 0 or FORCE_INSTALL == 1
