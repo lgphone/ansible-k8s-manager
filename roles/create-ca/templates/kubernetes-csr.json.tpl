@@ -2,9 +2,9 @@
   "CN": "kubernetes",
   "hosts": [
     "127.0.0.1",
-    {% for host in groups['kube-master'] %}
-        "{{ host }}",
-    {% endfor %}
+    {%- for host in groups['kube-master'] -%}
+     "{{ host }}",
+    {%- endfor -%}
     "{{ CLUSTER_KUBERNETES_SVC_IP }}",
     "kubernetes",
     "kubernetes.default",

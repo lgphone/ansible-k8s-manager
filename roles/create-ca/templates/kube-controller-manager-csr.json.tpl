@@ -1,9 +1,9 @@
 {
   "CN": "system:kube-controller-manager",
   "hosts": [
-    {% for host in groups['kube-master'] %}
+    {%- for host in groups['kube-master'] -%}
     "{{ host }}",
-    {% endfor %}
+    {%- endfor -%}
     "127.0.0.1"
   ],
   "key": {
