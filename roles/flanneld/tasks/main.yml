@@ -1,6 +1,6 @@
 - name: 检测是否已经安装
   shell: "ls {{K8S_BASE_DIR}}/cert/{flanneld.pem,flanneld-key.pem}"
-  ignore_erros: true
+  ignore_errors: true
   register: ret
 
 - block:

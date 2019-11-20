@@ -1,6 +1,6 @@
 - name: 检测是否已经安装
   shell: "ls {{ETCD_DATA_DIR}} {{ETCD_WAL_DIR}}"
-  ignore_erros: true
+  ignore_errors: true
   register: ret
 
 - block:

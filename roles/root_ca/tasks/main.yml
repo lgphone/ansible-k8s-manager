@@ -1,6 +1,6 @@
 - name: 检测是否已经存在证书
   shell: "ls {{K8S_TEMP_DIR}}/{ca.pem,ca-key.pem}"
-  ignore_erros: true
+  ignore_errors: true
   register: ret
 
 - block:
