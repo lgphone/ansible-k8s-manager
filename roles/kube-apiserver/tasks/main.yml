@@ -125,51 +125,51 @@
   delay: 3
 
 - block:
-  - name: 查看kube-apiserver在etcd中的数据,注册数据
-    shell: "ETCDCTL_API=3 etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
+    - name: 查看kube-apiserver在etcd中的数据,注册数据
+      shell: "ETCDCTL_API=3 etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
             --cacert={{K8S_BASE_DIR}}/cert/ca.pem --cert={{K8S_BASE_DIR}}/cert/kubernetes.pem \
             --key={{K8S_BASE_DIR}}/cert/kubernetes-key.pem get /registry/ --prefix --keys-only|head"
-    register: rest
-    until: rest.rc == 0
-    retries: 10
-    delay: 3
+      register: rest
+      until: rest.rc == 0
+      retries: 10
+      delay: 3
 
-  - name: 查看kube-apiserver在etcd中的数据
-    debug:
-      var: rest.stdout
+    - name: 查看kube-apiserver在etcd中的数据
+      debug:
+        var: rest.stdout
 
-  - name: 查看集群信息,注册数据
-    shell: "kubectl cluster-info"
-    register: rest
+    - name: 查看集群信息,注册数据
+      shell: "kubectl cluster-info"
+      register: rest
 
-  - name: 查看集群信息
-    debug:
-      var: rest.stdout
+    - name: 查看集群信息
+      debug:
+        var: rest.stdout
 
-  - name: 查看集群命名空间,注册数据
-    shell: "kubectl get all --all-namespaces"
-    register: rest
+    - name: 查看集群命名空间,注册数据
+      shell: "kubectl get all --all-namespaces"
+      register: rest
 
-  - name: 查看集群命名空间
-    debug:
-      var: rest.stdout
+    - name: 查看集群命名空间
+      debug:
+        var: rest.stdout
 
-  - name: 授予 kube-apiserver 访问 kubelet API 的权限
-    shell: "kubectl create clusterrolebinding kube-apiserver:kubelet-apis \
+    - name: 授予 kube-apiserver 访问 kubelet API 的权限
+      shell: "kubectl create clusterrolebinding kube-apiserver:kubelet-apis \
             --clusterrole=system:kubelet-api-admin --user kubernetes"
-    ignore_errors: true
+      ignore_errors: true
 
-  - name: 拷贝自动 approve CSR 请求配置文件
-    copy:
-      src: csr-crb.yaml
-      dest: "{{K8S_BASE_DIR}}/temp/csr-crb.yaml"
-      mode: 0644
+    - name: 拷贝自动 approve CSR 请求配置文件
+      copy:
+        src: csr-crb.yaml
+        dest: "{{K8S_BASE_DIR}}/temp/csr-crb.yaml"
+        mode: 0644
 
-  - name: 创建自动 approve CSR
-    shell: "cd {{K8S_BASE_DIR}}/temp/ && kubectl apply -f csr-crb.yaml"
+    - name: 创建自动 approve CSR
+      shell: "cd {{K8S_BASE_DIR}}/temp/ && kubectl apply -f csr-crb.yaml"
 
-  - name: 创建自动 approve CSR 授权
-    shell: "kubectl create clusterrolebinding kubelet-bootstrap \
+    - name: 创建自动 approve CSR 授权
+      shell: "kubectl create clusterrolebinding kubelet-bootstrap \
             --clusterrole=system:node-bootstrapper --group=system:bootstrappers"
 
   when: inventory_hostname == groups['kube-master'][0]

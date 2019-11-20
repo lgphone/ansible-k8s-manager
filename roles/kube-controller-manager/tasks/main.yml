@@ -61,15 +61,15 @@
   delay: 3
 
 - block:
-  - name: 查看kube-controller-manager集群信息,注册数据
-    shell: "kubectl get endpoints kube-controller-manager --namespace=kube-system -o yaml"
-    register: rest
-    until: rest.rc == 0
-    retries: 10
-    delay: 3
+    - name: 查看kube-controller-manager集群信息,注册数据
+      shell: "kubectl get endpoints kube-controller-manager --namespace=kube-system -o yaml"
+      register: rest
+      until: rest.rc == 0
+      retries: 10
+      delay: 3
 
-  - name: 查看kube-controller-manager集群信息
-    debug:
-      var: rest.stdout
+    - name: 查看kube-controller-manager集群信息
+      debug:
+        var: rest.stdout
 
   when: inventory_hostname == groups['kube-master'][0]
