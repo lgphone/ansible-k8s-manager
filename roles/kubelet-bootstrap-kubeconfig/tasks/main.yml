@@ -1,4 +1,4 @@
-- name: 生成根证书（自签名）
+- name: 生成各个node节点的kubelet-bootstrap.kubeconfig
   shell: 'cd {{K8S_TEMP_DIR}} && for node_name in {{ KUBE_NODES }};do \
           if [[ ! -f "kubelet-bootstrap-${node_name}.kubeconfig" ]];then \
           export BOOTSTRAP_TOKEN=$(kubeadm token create  --description kubelet-bootstrap-token \
