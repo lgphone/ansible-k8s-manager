@@ -2,6 +2,7 @@
   shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
           --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
           --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem get {{FLANNEL_ETCD_PREFIX}}/config"
+  when: inventory_hostname == groups['kube-master'][0]
   ignore_errors: true
   register: ret
 
@@ -10,7 +11,7 @@
     shell: "etcdctl --endpoints={{ ETCD_ENDPOINTS }} \
             --ca-file={{K8S_BASE_DIR}}/cert/ca.pem --cert-file={{K8S_BASE_DIR}}/cert/flanneld.pem \
             --key-file={{K8S_BASE_DIR}}/cert/flanneld-key.pem rm {{FLANNEL_ETCD_PREFIX}}/config"
-    when: ret.rc == 0
+    when: ret.rc == 0 and inventory_hostname == groups['kube-master'][0]
 
   - name: 分发flanneld 二进制文件
     unarchive:
