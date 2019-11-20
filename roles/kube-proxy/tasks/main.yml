@@ -1,6 +1,6 @@
 - name: 分发自签名ca根证书相关文件
   copy:
-    src: "{{KK8S_TEMP_DIR}}/{{item}}"
+    src: "{{K8S_TEMP_DIR}}/{{item}}"
     dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
     mode: 0644
   loop:

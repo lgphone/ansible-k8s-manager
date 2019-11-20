@@ -1,11 +1,11 @@
 - name: 分发Nginx 二进制压缩包
   unarchive:
     src: "nginx-1.16.1.tar.gz"
-    dest: "{{KK8S_TEMP_DIR}}"
+    dest: "{{K8S_TEMP_DIR}}"
     mode: 0755
 
 - name: 编译并安装kube api代理软件nginx
-  shell: "cd {{KK8S_TEMP_DIR}}/nginx-1.16.1 && ./configure --with-stream \
+  shell: "cd {{K8S_TEMP_DIR}}/nginx-1.16.1 && ./configure --with-stream \
           --without-http --prefix={{KUBE_NGINX_INSTALL_DIR}} --without-http_uwsgi_module \
           --without-http_scgi_module --without-http_fastcgi_module && make && make install"
 

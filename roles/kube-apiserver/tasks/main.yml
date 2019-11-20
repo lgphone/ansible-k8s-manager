@@ -1,6 +1,6 @@
 - name: 分发证书相关文件
   copy:
-    src: "{{KK8S_TEMP_DIR}}/{{item}}"
+    src: "{{K8S_TEMP_DIR}}/{{item}}"
     dest: "{{K8S_BASE_DIR}}/cert/{{item}}"
     mode: 0644
   loop:
@@ -133,11 +133,11 @@
   - name: 拷贝自动 approve CSR 请求配置文件
     copy:
       src: csr-crb.yaml
-      dest: "{{KK8S_TEMP_DIR}}/csr-crb.yaml"
+      dest: "{{K8S_TEMP_DIR}}/csr-crb.yaml"
       mode: 0644
 
   - name: 创建自动 approve CSR
-    shell: "cd {{KK8S_TEMP_DIR}}/ && kubectl apply -f csr-crb.yaml"
+    shell: "cd {{K8S_TEMP_DIR}}/ && kubectl apply -f csr-crb.yaml"
 
   - name: 创建自动 approve CSR 授权
     shell: "kubectl create clusterrolebinding kubelet-bootstrap \
