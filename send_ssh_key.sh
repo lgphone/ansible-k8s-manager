@@ -5,8 +5,7 @@ if [[ ! -f "/root/.ssh/id_rsa" ]];then
   ssh-keygen -t rsa -b 2048 -N '' -f /root/.ssh/id_rsa
 fi
 # 检测是否安装了 expect
-ret_code=$(expect -v)
-if [[ ${ret_code} != 0 ]];then
+if ! expect -v &>/dev/null;then
   echo "install expect"
   yum install expect -y
 fi
