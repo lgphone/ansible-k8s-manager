@@ -50,14 +50,6 @@
     - kubeadm.tar.gz
     - kubectl.tar.gz
 
-- name: 注册随机字符串变量
-  shell: "head -c 32 /dev/urandom | base64"
-  register: random_cmd_res
-
-- name: 设置变量
-  set_fact:
-    ENCRYPTION_KEY: "{{random_cmd_res.stdout}}"
-
 - name: 生成加密配置文件
   template:
     src: encryption-config.yaml.tpl
