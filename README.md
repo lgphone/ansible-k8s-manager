@@ -4,9 +4,13 @@
 介绍
 * 基于ansible 自动化部署k8s集群，k8s版本为1.16.2
 * 修改inventory 为自己服务器集群的ip数据 etcd 至少三台机器
+* 兼容性: 只在CentOS 7.7 下测试过,其他CentOS 7.x 理论也没问题
 
 
 预先步骤:
+按下图完全重新清洁安装CentOS 系统
+
+![centos install](https://github.com/lgphone/ansible-k8s-manager/blob/master/doc/centos-install.png)
 1. 将要部署的机器内核升级到最新稳定版本
 2. 将要部署的机器配置到inventory
 3. 将inventory中的服务器信息按格式写入ip.txt中
