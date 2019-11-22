@@ -12,7 +12,7 @@
 按下图完全重新清洁安装CentOS 系统
 
 ![centos install](https://github.com/lgphone/ansible-k8s-manager/blob/master/doc/centos-install.png)
-1. 将要部署的机器内核升级到最新稳定版本
+1. 将要部署的机器内核升级到最新稳定版本 # 非必须
 2. 将要部署的机器配置到inventory
 3. 将inventory中的服务器信息按格式写入ip.txt中
 4. bash send_ssh_key.sh  # 配置免密码登录
