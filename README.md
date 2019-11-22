@@ -18,7 +18,7 @@
 4. bash send_ssh_key.sh  # 配置免密码登录
 5. 控制端安装ansible # yum install python-pip -y && pip install ansible
 
-`！注意： ansible控制端能在inventory 中配置的kube-master的第一个节点上`
+`！注意： ansible控制端只能安装在inventory中kube-master的第一个节点上`
 
 #### 部署步骤
 1. ansible-playbook -i inventory 01_system_init.yml # 初始化服务器
