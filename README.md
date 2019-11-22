@@ -8,6 +8,7 @@
 
 
 预先步骤:
+
 按下图完全重新清洁安装CentOS 系统
 
 ![centos install](https://github.com/lgphone/ansible-k8s-manager/blob/master/doc/centos-install.png)
