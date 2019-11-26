@@ -24,6 +24,8 @@ ENCRYPTION_KEY="Gz/dVfGPaelTAbxkPprMA5a89ZB+D2VhkiXK4/bwec8="
 SERVICE_CIDR="10.68.0.0/16"
 # kubernetes 服务 IP (预分配，一般是 SERVICE_CIDR 中第一个IP)
 CLUSTER_KUBERNETES_SVC_IP="10.68.0.1"
+# CLUSTER DNS
+CLUSTER_DNS_DOMAIN="cluster.local"
 # 集群 DNS 服务 IP (从 SERVICE_CIDR 中预分配)
 CLUSTER_DNS_SVC_IP="10.68.0.2"
 # Cluster CIDR (Pod CIDR), not overlap with node(host) networking

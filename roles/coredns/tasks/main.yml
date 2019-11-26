@@ -1,0 +1,18 @@
+- name: 生成coredns deplyment配置文件
+  template:
+    src: coredns.yaml.tpl
+    dest: "{{ K8S_TEMP_DIR }}/coredns.yaml"
+
+- name: 部署coredns服务
+  shell: "cd {{ K8S_TEMP_DIR }}&&kubectl -f coredns.yaml"
+
+- name: 检查coredns 功能
+  shell: "kubectl get all -n kube-system"
+  register: rets
+  until: rets.stdout
+  retries: 40
+  delay: 3
+
+- name: 查看当前coredns 信息
+  debug:
+    var: rets.stdout
