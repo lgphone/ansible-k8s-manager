@@ -4,7 +4,7 @@
     dest: "{{ K8S_TEMP_DIR }}/coredns.yaml"
 
 - name: 部署coredns服务
-  shell: "cd {{ K8S_TEMP_DIR }}&&kubectl -f coredns.yaml"
+  shell: "cd {{ K8S_TEMP_DIR }} && kubectl create -f coredns.yaml"
 
 - name: 检查coredns 功能
   shell: "kubectl get all -n kube-system"

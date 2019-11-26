@@ -4,7 +4,7 @@
     dest: "{{ K8S_TEMP_DIR }}/"
 
 - name: 部署metrics-server服务
-  shell: "cd {{ K8S_TEMP_DIR }}/metrics-server && kubectl -f ."
+  shell: "cd {{ K8S_TEMP_DIR }}/metrics-server && kubectl create -f ."
 
 - name: 检查metrics-server 功能
   shell: "kubectl -n kube-system get pods -l k8s-app=metrics-server"
