@@ -6,7 +6,7 @@ Documentation=http://docs.docker.io
 WorkingDirectory={{ DOCKER_DIR }}
 Environment="PATH={{ K8S_BASE_DIR }}/bin:/bin:/sbin:/usr/bin:/usr/sbin"
 EnvironmentFile=-/run/flannel/docker
-ExecStart=/opt/k8s/bin/dockerd --config-file {{ DOCKER_DIR }}/daemon.json $DOCKER_NETWORK_OPTIONS
+ExecStart={{ K8S_BASE_DIR }}/bin/dockerd --config-file {{ DOCKER_DIR }}/daemon.json $DOCKER_NETWORK_OPTIONS
 ExecReload=/bin/kill -s HUP $MAINPID
 Restart=on-failure
 RestartSec=5
