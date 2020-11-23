@@ -114,7 +114,7 @@ spec:
         beta.kubernetes.io/os: linux
       containers:
       - name: coredns
-        image: gcr.azk8s.cn/google_containers/coredns:1.6.2
+        image: registry.aliyuncs.com/k8sxio/coredns:1.6.2
         imagePullPolicy: IfNotPresent
         resources:
           limits:
